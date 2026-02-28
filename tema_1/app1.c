@@ -26,7 +26,7 @@ void help(int fd) {
 	char* message =	
 		"Utilizare: ./yell [string] options [output-file]\n\n"
 		"Optiuni:\n"
-		"-h --help                   Afiseaza informatii referitoare la utilizarea programului\n"
+		"-h --help                   Afiseaza informatii referitoare la utilizarea comenzii\n"
 		"-c --capital                Transforma caracterele sirului in CARACTERE MARI\n"
 		"-o --output [output-file]   Scrie sirul de caractere dat in fisierul cu numele ales dupa prelucrare daca este cazul\n";
 

@@ -1,0 +1,12 @@
+clean:
+    rm -rf build
+
+build:
+    conan install . --output-folder=build --build=missing
+    mkdir -p build
+    (cd build && cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release && make)
+    ln -sf build/compile_commands.json .
+
+cbuild:
+    just clean
+    just build

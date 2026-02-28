@@ -4,10 +4,10 @@
  * Tema 1: app2.c
  * Vom implementa o comanda numita vrand (very-random) pentru generarea de numere random
  * Optiuni:
+ * (-h/--help) indicatii pentru folosirea comenzii
  * (-f/--from) limita inferioara a range-ului de numere din care se v-a face alegerea, necesita o valoare, default 0
  * (-t/--to) limita superioara a range-ului de numere din care se v-a face alegerea, necesita o valoare, default 100
  * (-e/--even-only) numarul extras v-a fi par garantat, nu necesita valoare
- * (-h/--help) indicatii pentru folosirea comenzii
  */
 
 #include <string.h> // strlen()
@@ -25,7 +25,7 @@ void help(int fd) {
 	char* message =	
 		"Utilizare: ./rand options\n\n"
 		"Optiuni:\n"
-		"-h --help          Afiseaza informatii referitoare la utilizarea programului\n"
+		"-h --help          Afiseaza informatii referitoare la utilizarea comenzii\n"
 		"-f --from          Limita inferioara a range-ului de numere (DEFAULT = 0)\n"
 		"-t --to            Limita inferioara a range-ului de numere (DEFAULT = 100)\n"
         "-e --even-only     Garanteaza ca numarul extras v-a fi par\n";

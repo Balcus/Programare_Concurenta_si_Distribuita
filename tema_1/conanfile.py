@@ -8,6 +8,7 @@ class Tema1(ConanFile):
 
     name = "Tema_1"
     version = "1.0"
+    author = "Balcus Bogdan"
     exports_sources = "src/*"
 
     def requirements(self):
