@@ -21,7 +21,7 @@
 #include <string.h> // strlen()
 #include <fcntl.h> // open() si constantele O_WRONLY, O_CREAT, O_TRUNC
 
-// functia help primeste un file descriptor si scrie in el mesajul de help
+// functia help primeste un file descriptor si scrie in el mesajul de ajutor
 void help(int fd) {
 	char* message =	
 		"Utilizare: ./yell [string] options [output-file]\n\n"
