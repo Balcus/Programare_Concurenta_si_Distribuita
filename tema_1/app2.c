@@ -54,7 +54,7 @@ int vrand(int f, int t, int e) {
 }
 
 int main(int argc, char* argv[]) {
-    // Facem seed la generatorul de numere random folosit de functia rand()
+    // facem seed la generatorul de numere random folosit de functia rand()
     srand(time(NULL));
 
     // variabila in care v-a fi stocata optiunea

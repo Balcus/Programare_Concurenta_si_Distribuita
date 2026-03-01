@@ -2,15 +2,13 @@
  * Nume si prenume: Balcus Bogdan
  * IR3 2026, subgrupa 1
  * Tema 1: app1.c
- * Recreem comanda echo sub numele de yell :)
- * Comanda v-a functiona doar daca primeste de la utilizator dupa numele programului
- * (./yell) si un argument de tip string pe care sa il proceseze.
- * Comanda v-a a avea 2 optiuni care nu necesita valoari:
- * - (-h/--help) v-a afisa un ghid de folosire pentru comanda
- * - (-c/--capital) v-a transforma sirul de caractere in litere mari
- * si una care v-a necesita o valoare:
- * - (-o/--output) numele fisierului in care v-a fi scris output-ul comenzii. 
- * In cazul in care fisierul nu exista, acesta v-a fi creeat
+ * Comanda va functiona asemanator cu echo si va avea nevoie de un argument de tip string pe care sa il proceseze.
+ * Avem 2 optiuni care nu necesita valoari:
+ * - (-h/--help) afiseaza un ghid de folosire pentru comanda
+ * - (-c/--capital) transforma sirul de caractere in litere mari
+ * Avem o optiune care necesita o valoare:
+ * - (-o/--output) numele fisierului in care este scris output-ul comenzii. 
+ * In cazul in care fisierul nu exista, acesta va fi creeat
  */
 
 #include <stdio.h> // perror()
@@ -38,11 +36,10 @@ void help(int fd) {
 }
 
 char* fcapital(char* str) {
-	// salvam referinta la primul caracter al sirului, vom avea nevoie de ea pentru a
-	// returna sirul dupa ce l-am modificat
+	// salvam referinta la primul caracter al sirului, vom avea nevoie de ea pentru a returna sirul modificat
 	char* res = str;
 
-	// parcurgem pana ajungem la terminatorul null
+	// parcurgem pana ajungem la sfarsitul sirului
 	while (*str != '\0') {
 		// transformam fiecare capracter in litera mare
 		*str = toupper(*str);
@@ -54,16 +51,16 @@ char* fcapital(char* str) {
 	return res;
 }
 
-// exemplul pe care mi-am bazat logica de parsare a optiunilor folosind getopt_long este cel din Advanced Linux Programming
+// exemplul folosit pentru getopt_long este cel din Advanced Linux Programming
 int main(int argc, char* argv[]) {
-	// variabila in care se v-a stoca optiunea
+	// variabila in care se va stoca optiunea
 	int next_option;
-	// flag pentru a marca daca trebuie sa transformam string-ul in litere mari
+	// flag care marcheaza daca trebuie sa transformam string-ul in litere mari
 	int capital = 0;
-	// variabila in care vom stoca numele fisierului dedicat output
+	// variabila in care stocam numele fisierului pentru output
 	char* output_filename = NULL;
 
-	// sir de caractere pe care i-l vom da functiei getopt_long
+	// sir de caractere de care are nevoie functiei getopt_long
 	// simbolul : marcheaza faptul ca optiunea de dinainte cere o valoare
 	const char* const short_options = "ho:c";
 
