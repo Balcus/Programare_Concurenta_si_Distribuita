@@ -3,9 +3,12 @@ project(Tema_1)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/build/Release/generators")
 find_package(argtable3 REQUIRED)
+find_package(libconfig REQUIRED)
 
 add_executable(yell app1.c)
 add_executable(vrand app2.c)
 add_executable(first app3.c)
+add_executable(app4 app4.c)
 
 target_link_libraries(first argtable3::argtable3)
+target_link_libraries(app4 libconfig::libconfig)

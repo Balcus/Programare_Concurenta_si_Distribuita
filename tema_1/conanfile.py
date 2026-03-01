@@ -13,6 +13,7 @@ class Tema1(ConanFile):
 
     def requirements(self):
         self.requires("argtable3/3.2.2")
+        self.requires("libconfig/1.7.3")
     
     def layout(self):
         cmake_layout(self)

@@ -152,6 +152,11 @@ int main(int argc, char *argv[]) {
 /*
 Script started on Sun Mar  1 14:55:14 2026
 
+% clang-tidy app3.c -- -std=c17
+40 warnings generated.
+Suppressed 40 warnings (40 in non-user code).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+
 % ./first
 ./first: missing option <file_names>
 [-hq] [-l <int>] <file_names> [<file_names>]...
