@@ -23,7 +23,7 @@
 // functia help primeste un file descriptor si scrie in el mesajul de ajutor
 void help(int fd) {
 	char* message =	
-		"Utilizare: ./rand options\n\n"
+		"Utilizare: ./vrand options\n\n"
 		"Optiuni:\n"
 		"-h --help          Afiseaza informatii referitoare la utilizarea comenzii\n"
 		"-f --from          Limita inferioara a range-ului de numere (DEFAULT = 0)\n"

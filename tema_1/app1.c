@@ -35,10 +35,8 @@ void help(int fd) {
 		}
 }
 
-char* fcapital(char* str) {
-	// salvam referinta la primul caracter al sirului, vom avea nevoie de ea pentru a returna sirul modificat
-	char* res = str;
-
+void fcapital(char* str) {
+	// modificam sirul in place
 	// parcurgem pana ajungem la sfarsitul sirului
 	while (*str != '\0') {
 		// transformam fiecare capracter in litera mare
@@ -46,9 +44,6 @@ char* fcapital(char* str) {
 		// incrementam pointerul pentru a ajunge la adresa de memorie a urmatorului caracter
 		str++;
 	}
-
-	// returnam un pointer spre primul caracter din sir
-	return res;
 }
 
 // exemplul folosit pentru getopt_long este cel din Advanced Linux Programming
