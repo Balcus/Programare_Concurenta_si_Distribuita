@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * Nume si prenume: Balcus Bogdan
+ * IR3 2026, subgrupa 1
+ * Tema 2: app1.c
+ * Programul v-a realiza structura de procese ceruta la cerinta 1 si respectiv 2
+*/
+
+//TODO: add -1 check for fork()
+
 int main(int argc, char* argv[]) {
     int next_option, processes = 0, subprocesses = 0;
 

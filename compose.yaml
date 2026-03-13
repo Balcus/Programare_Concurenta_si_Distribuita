@@ -1,0 +1,16 @@
+# docker compose up -d
+# docker compose exec gcc-env /bin/bash
+
+services:
+  gcc-env:
+    image: gcc:trixie
+    container_name: gcc_workspace
+    stdin_open: true
+    tty: true
+    volumes:
+      - gcc_data:/app
+    working_dir: /app
+    entrypoint: /bin/bash
+
+volumes:
+  gcc_data:
