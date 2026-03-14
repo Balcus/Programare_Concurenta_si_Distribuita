@@ -1,19 +1,22 @@
-#include <getopt.h> // getopt_long(), optarg, structura option
-#include <stdio.h>
-#include <stdlib.h>
+#include <getopt.h>   // getopt_long(), optarg, struct option
+#include <stdio.h>    // printf(), fprintf(), perror(), stderr, NULL
+#include <stdlib.h>   // exit(), atoi(), abort(), EXIT_FAILURE (optional)
+#include <unistd.h>   // fork(), getpid(), getppid(), pid_t
+#include <sys/wait.h> // wait()
 
 /*
  * Nume si prenume: Balcus Bogdan
  * IR3 2026, subgrupa 1
  * Tema 2: app1.c
- * Programul v-a realiza structura de procese ceruta la cerinta 1 si respectiv 2
+ * Programul va realiza structura de procese ceruta la cerinta 1 si respectiv 2
 */
 
-//TODO: add -1 check for fork()
-
 int main(int argc, char* argv[]) {
-    int next_option, processes = 0, subprocesses = 0;
+    // Parsam optiunile folosind getopt_long()
+    int next_option;
 
+    // structurile necesare pentru apelul getopt_long()
+    // ambele optiuni vor avea valori date de utilizator
     const char* const short_options = "p:s:";
 	const struct option long_options[] = {
 		{"processes", 1, NULL, 'p'},
@@ -21,6 +24,10 @@ int main(int argc, char* argv[]) {
 		{NULL, 0, NULL, 0}
 	};
 
+    // variabile care vor retine numarul de procese si subprocese
+    int processes = 0, subprocesses = 0;
+
+    // bucla pentru parcurgerea optiunilor
     do {
 		next_option = getopt_long(argc, argv, short_options, long_options, NULL);
 
@@ -40,57 +47,109 @@ int main(int argc, char* argv[]) {
 		}
 	}while(next_option != -1);
 
+    // validare pentru numarul de procese sau subprocese sa nu fie negativ
     if (processes < 0 || subprocesses < 0) {
         if (fprintf(stderr, "Numarul de procese/subprocese trebuie sa aibe o valoare pozitiva\n") < 0) {
-            perror("Eroare la scrierea in stderr");
+            perror("Eroare la scrierea in stderr\n");
         }
         exit(1);
     }
 
     printf("Process[A] PID %d PPID %d\n", (int)getpid(), (int)getppid());
 
+    // creem procesul copil B cu parinte A: A->B
     pid_t pid_b = fork();
+
+    // in caz de eroare la apelul fork(), afisam eroarea si iesim cu exit_code 1
+    if (pid_b == -1) {
+        perror("Eroare la apelul fork()\n");
+        exit(1);
+    }
+
+    // in cazul in care ne aflam in copil (procesul B, parinte: A)
     if (pid_b == 0) {
         printf("Process[B] PID %d PPID %d\n", (int)getpid(), (int)getppid());
+        // creem procesul 0 ca si copil al procesului B: A->B->0
         pid_t pid_0 = fork();
+
+        // in caz de eroare la apelul fork(), afisam eroarea si iesim cu exit_code -1
+        if (pid_0 == -1) {
+            perror("Eroare la apelul fork()\n");
+            exit(1);
+        }
+
+        // in cazul in care ne aflam in copil (procesul 0, parinte: B)
         if (pid_0 == 0) {
             printf("Process[0] PID %d PPID %d\n", (int)getpid(), (int)getppid());
+
+            // creem piaptanele de procese de la 1..processes cu partinte 0: A->B->0->1..p
             for (int i = 1 ; i <= processes ; i++) {
                 pid_t child_pid = fork();
+
+                // in caz de eroare la apelul fork(), afisam eroarea si iesim cu exit_code -1
+                if (child_pid == -1) {
+                    perror("Eroare la apelul fork()\n");
+                    exit(1);
+                }
+                
+                // in cazul in care ne aflam in copil (unul din procesele 1..p, parinte: 0)
                 if (child_pid == 0) {
                     printf("Process[%d] PID %d PPID %d\n", i, (int)getpid(), (int)getppid());
+
+                    // creem lantul de procese 1..sp
                     for (int j = 1 ; j <= subprocesses ; j++) {
                         pid_t sbp_pid = fork();
+
+                        // in caz de eroare la apelul fork(), afisam eroarea si iesim cu exit_code -1
+                        if (sbp_pid == -1) {
+                            perror("Eroare la apelul fork()\n");
+                            exit(1);
+                        }
+
+                        // in cazul in care ne aflam in copil, unul din procesele 1.1..1.sp, parinte unul din procesele 1..p
                         if (sbp_pid == 0) {
+                            // vom printa mesajul si continua fara a iesi, cum copilul va executa acelasi cod ca si parintele,
+                            // dupa afisarea mesajului va continua parcurgerea buclei 1..sp si deci generarea unui nou copil sub el, 
+                            // creeand astfel lantul de procese 1.1..1.sp
                             printf("Process[%d.%d] PID %d PPID %d\n", i, j, (int)getpid(), (int)getppid());
-                        }else {
+                        } else {
+                            // in cazul in care ne aflam in parinte, asteptam copilul si apoi iesim,
+                            // cum fiecare copil va creea la randul sau un copil si deveni parinte in urmatoarea iteratie a buclei
+                            // este nevoie sa punem wait-ul si exit-ul aici pentru a opri parintele din a crea mai multi copii pe acelasi nivel
+                            // vom folosi wait(NULL) pentru a spune parintelui sa astepte executia copilului inainte de a isi termina executia,
+                            // astfel prevenind procesele zombie
                             wait(NULL);
                             exit(0);
                         }
                     }
+
+                    // cod executat de procesele 1..p dupa ce au terminat de creat lantul de procese, iasa cu exit code 0
                     exit(0);
-                }
+                } // iesim din conditia de copil al procesului 0
             }
 
+            // cod executat de procesul 0, acesta asteapta toti copii 1..p dupa care iasa cu exit code 0
             for (int i = 0 ; i < processes ; i++) {
                 wait(NULL);
             }
             exit(0);
-        }
+        } // iesim din conditia pentru copil al procesului B
 
+        // cod executat de procesul B, asteapta procesul 0 dupa care iasa cu exit code 0
         wait(NULL);
         exit(0);
-    }
+    } // iesim din conditia de copil al procesului A
 
+    // cod executat de procesul A, asteapta procesul B dupa care iasa cu exit code 0
     wait(NULL);
     return 0;
 }
 
 /*
 
-% clang-tidy app1.c -- -std=c17
-40 warnings generated.
-Suppressed 40 warnings (40 in non-user code).
+root@f944939cbc1b:/app# clang-tidy app1.c -- -std=c17
+2 warnings generated.
+Suppressed 2 warnings (2 in non-user code).
 Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
 
 % ./build/app1 -p 10
