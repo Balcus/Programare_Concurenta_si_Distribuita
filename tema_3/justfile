@@ -2,9 +2,12 @@ clean:
     rm -rf build
 
 build:
-    mkdir -p build
-    cd build && cmake ..
-    cd build && make
+    export CMAKE_POLICY_VERSION_MINIMUM=3.5 && \
+    conan install . --build=missing
+    cmake --preset conan-release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    cmake --build --preset conan-release
+    ln -sf build/Release/compile_commands.json .
+    cp shell_config.cfg ./build/Release/
 
 cbuild:
     just clean
