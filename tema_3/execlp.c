@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/types.h>
+#include <stdio.h>      // perror()
+#include <stdlib.h>     // exit(), abort()
+#include <unistd.h>     // fork(), execlp()
+#include <sys/wait.h>   // waitpid(), WEXITSTATUS()
+#include <sys/types.h>  // pid_t
 
 /*
  * Nume si prenume: Balcus Bogdan
