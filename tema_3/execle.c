@@ -13,6 +13,8 @@
  * si a printa variabila de mediu MESSAGE primita ca parametru
 */
 
+// nu voi mai adauga exact aceleasi comentarii ca si la execv
+// voi adauga doar unde se schimba ceva.
 int main() {
     pid_t cpid;
     int status = 0;
@@ -25,7 +27,11 @@ int main() {
     }
 
     if (cpid == 0) {
+        // creem lista de variabile de mediu, variabila MESSAGE cu valoarea world
         static char* environ[] = { "MESSAGE=world", NULL };
+        // folosim si de datea asta shell-ul pentru a afisa valoarea variabilei de mediu
+        // dam ca parametrii execle calea absoluta spre shell, argumentele ca stirng-uri separate prin ','
+        // NULL pentru a marca sfarsitul argumentelor si lista de variabile de mediu
         execle("/bin/sh", "sh", "-c", "echo $MESSAGE", NULL, environ);
         perror("Eroare la apelul execle()");
         abort();

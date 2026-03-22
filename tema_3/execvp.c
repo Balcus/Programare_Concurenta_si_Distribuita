@@ -12,6 +12,8 @@
  * pentru a afisa toate procesele care ruleaza pe sistem
 */
 
+// nu voi mai adauga exact aceleasi comentarii ca si la execv
+// voi adauga doar unde se schimba ceva.
 int main() {
     pid_t cpid;
     int status = 0;
@@ -24,7 +26,11 @@ int main() {
     }
 
     if (cpid == 0) {
+        // creem lista de argumente, vom folosi comanda ps cu argumentul aux
+        // pentru a vedea toate procesele care ruleaza pe sistem
         static char* args[] = {"ps", "aux", NULL};
+        // folosim functia execvp cu numele utilitarei ps pe care o va cauta in PATH si lista de argumente
+        // fata de execv, aici nu este nevoie sa trimitem calea absoluta
         execvp("ps", args);
         perror("Eroare la apelul execvp()");
         abort();

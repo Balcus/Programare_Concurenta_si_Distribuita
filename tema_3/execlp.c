@@ -11,6 +11,8 @@
  * Programul va folosi execlp pentru a apela functia de sistem whoami si a afisa user-ul curent
 */
 
+// nu voi mai adauga exact aceleasi comentarii ca si la execv
+// voi adauga doar unde se schimba ceva.
 int main() {
     pid_t cpid;
     int status = 0;
@@ -23,6 +25,8 @@ int main() {
     }
 
     if (cpid == 0) {
+        // vom folosi execpl pentru a afisa user-ul curent folosind comanda whoami
+        // trimitem doar numele comenzii in loc de calea relativa iar execpl o va cauta in PATH
         execlp("whoami", "whoami", NULL);
         perror("Eroare la apelul execlp()");
         abort();

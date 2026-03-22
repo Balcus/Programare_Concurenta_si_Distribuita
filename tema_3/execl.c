@@ -13,6 +13,8 @@
  * pentru a printa spatiul valabil de pe disk in format human readable
 */
 
+// nu voi mai adauga exact aceleasi comentarii ca si la execv
+// voi adauga doar unde se schimba ceva.
 int main() {
     pid_t cpid;
     int status = 0;
@@ -25,6 +27,9 @@ int main() {
     }
 
     if (cpid == 0) {
+        // execl primeste lista de argumente ca string-uri direct in apelul de functie
+        // nu a fost nevoie sa creem un array pentru args pe care sa il trimitem ca parametru
+        // apelam comanda df cu flag-ul h pentru a vedea spatiul disponibil pe sistem intr-un format human readable
         execl("/bin/df", "df", "-h", NULL);
         perror("Eroare la apelul execl()");
         abort();

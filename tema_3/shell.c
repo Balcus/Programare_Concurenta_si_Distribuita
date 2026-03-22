@@ -17,18 +17,26 @@
 #define MAX_COMMAND_ARGS 32
 #define CONFIG_PATH "shell_config.cfg"
 
+// structura care ne va ajuta sa lucram cu
+// continutul fisierului de configurare
 struct ParsedConfig {
     char* username;
     char* password;
     char* prompt;
 };
 
+// structura care ne va ajuta sa lucram cu comenzile
+// si sa le trimitem functiei execvp()
 struct Command {
+    // numele comenzii
     char* name;
+    // numarul de argumente
     int argc;
+    // argumentele
     char* *argv;
 };
 
+// declararea semnaturii functiilor
 struct ParsedConfig parse_config(config_t *cfg);
 void destroy_parsed_config(struct ParsedConfig *pc);
 int shell(struct ParsedConfig *pc);
@@ -39,9 +47,12 @@ void init_command(struct Command * command);
 struct Command parse_command(char * const command);
 void destroy_command(struct Command * command);
 
+// funcite care are rolul de a citi fisierul de configurare si a returna structura 
+// care sa contina campurile necesare configurarii shell-ului
 struct ParsedConfig parse_config(config_t *cfg) {
     const char *prompt, *username, *password;
 
+    // incercam sa citim fisierul de configurara, in caz de eroare afisam eroarea, eliberam resursele si returnam exit code 1
     if(!config_read_file(cfg, CONFIG_PATH)) {
         if (fprintf(stderr, "%s:%d - %s\n", config_error_file(cfg), config_error_line(cfg), config_error_text(cfg)) < 0) {
             perror("Eroare la apelul fprintf() ");
@@ -50,6 +61,7 @@ struct ParsedConfig parse_config(config_t *cfg) {
         exit(1);
     }
 
+     // incercam sa cautam valoarea pentru prompt in fisierul de configurara, in caz de eroare afisam eroarea, eliberam resursele si returnam exit code 1
     if(!config_lookup_string(cfg, "prompt", &prompt)) {
         if (fprintf(stderr, "Campul prompt lipseste din configurare\n") < 0) {
             perror("Eroare la apelul fprintf() ");
@@ -58,6 +70,7 @@ struct ParsedConfig parse_config(config_t *cfg) {
         exit(1);
     }
 
+    // incercam sa cautam valoarea pentru username in fisierul de configurara, in caz de eroare afisam eroarea, eliberam resursele si returnam exit code 1
     if(!config_lookup_string(cfg, "username", &username)) {
         if (fprintf(stderr, "Campul username lipseste din configurare\n") < 0){
             perror("Eroare la apelul fprintf() ");
@@ -66,6 +79,7 @@ struct ParsedConfig parse_config(config_t *cfg) {
         exit(1);
     }
 
+    // incercam sa cautam valoarea pentru password in fisierul de configurara, in caz de eroare afisam eroarea, eliberam resursele si returnam exit code 1
     if(!config_lookup_string(cfg, "password", &password)) {
         if (fprintf(stderr, "Campul password lipseste din configurare\n") < 0) {
             perror("Eroare la apelul fprintf() ");
@@ -74,6 +88,7 @@ struct ParsedConfig parse_config(config_t *cfg) {
         exit(1);
     }
 
+    // creeam structura cu configurare si o populam, apoi o returnam
     struct ParsedConfig parsed;
     parsed.username = strdup(username);
     parsed.password = strdup(password);
@@ -82,12 +97,15 @@ struct ParsedConfig parse_config(config_t *cfg) {
     return parsed;
 }
 
+// funcite care sa elibereze resursele folosite de strucutra ParsedConfig
 void destroy_parsed_config(struct ParsedConfig *pc) {
     free(pc->username);
     free(pc->password);
     free(pc->prompt);
 }
 
+// fucnite pentru login, compara username-ul si parola date de utilizator cu cele din configurare
+// in cazul in care nu se potrivesc afiseaza mesajul de eroare, elibereaza resursele pentru configurarea si iasa cu exit code 1
 void login(char * const username, char * const password, struct ParsedConfig *pc) {
     if (strcmp(username, pc->username) != 0 || strcmp(password, pc->password) != 0) {
         if (fprintf(stderr, "Credentiale invalide\n") < 0) {
@@ -99,68 +117,102 @@ void login(char * const username, char * const password, struct ParsedConfig *pc
     printf("Credentiale corecte, bine ai venit!\n");
 }
 
+// fucnita are ca scop executarea comenzii intr-un process nou dupa ce aceasta a fost parsata si returnarea statusului
 int system_2(char * const command) {
     int status;
+    // trimitem comanda sub forma de string fucnitei parse_command()
+    // care ne va genera structura necesara corespunzatoare comenzii parsate
     struct Command cmd = parse_command(command);
+
+    // in cazul in care nu avem niciun argument (am primit o comanda in genul '' sau '   ')
+    // eliberam resursele alocate pentru structura comanda si returnam 0
     if (cmd.argc == 0) {
         destroy_command(&cmd);
         return 0;
     }
 
     pid_t child_pid = fork();
+    // daca apelul fork a esuat afisam un mesaj de eroare si returnam 1
     if (child_pid == -1) {
         perror("Eroare la apelul fork() ");
-        return -1;
+        return 1;
     }
 
+    // daca suntem in copil
     if (child_pid == 0) {
+        // folosim execvp pentru a executa comanda pe care o vom cauta dupa nume in PATH
+        // si careia ii trimitem lista de argumente din structura creata mai sus
         execvp(cmd.argv[0], cmd.argv);
+
+        // daca apelul execvp esueaza afisam eroarea si returnam 1
         perror("Eroare la executia execvp ");
-        exit(-1);
+        return 1;
     }
 
-    waitpid(child_pid, &status, 0);
+    // asteptam copilul, in caz de eroare la watipid afisam mesajul, eliberam resursele si returnam 1
+    if (waitpid(child_pid, &status, 0) == -1) {
+        perror("Eroare la waitpid() ");
+        destroy_command(&cmd);
+        return 1;
+    }
     destroy_command(&cmd);
 
-    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    // daca procesul s-a terminat normal extrage statusul si il returneaza, daca nu returneaza 1
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
 }
 
+// funcit adapted system are rolul de a despartii linia primita in comenzi in functie de ';'
+// si trimiterea fiecarei comenzi la functia system_2 pentru a fi executata
 int adatped_system(char * const line) {
+    // statusul ultimei comenzi executate
     int last_status = 0;
+    // variabila folosita pentru a salva ce ramane din sir dupa delimitari
     char *saveptr;
+    // separatorul folosit pentru linie
     const char * sep = ";";
+
+    // folosim strtok_r pentru a sparge linia in token-uri folosind separatorul ;
     char *token = strtok_r(line, sep, &saveptr);
 
     while (token != NULL) {
+        // sarim peste spatii
         while (*token == ' ') {
             token++;
         }
 
         if (*token != '\0') {
+            // trimitem comanda la system_2 pentru a fi executata si salvam statusul
             last_status = system_2(token);
         }
 
+        // continuam sa delimitam sirul ramas
         token = strtok_r(NULL, sep, &saveptr);
     }
 
     return last_status;
 }
 
+// funcite cu rolul de a parsa comanda sub forma de string si a returna structura definita de mine
 struct Command parse_command(char * const command) {
+    // variabila care va stoca comanda parsata
     struct Command cmd;
     init_command(&cmd);
 
+    // variabila care stocheaza vaolarea separatorului: ' '
     const char* sep = " ";
     char *saveptr;
     char *token = strtok_r(command, sep, &saveptr);
 
+    // fiecare string delimitat de spatiu este stocat in argv
     while (token != NULL) {
         cmd.argv[cmd.argc] = token;
         cmd.argc++;
         token = strtok_r(NULL, sep, &saveptr);
     }
 
+    // pe ulima pozitie a argv punem NULL
     cmd.argv[cmd.argc] = NULL;
+    // in cazul in care am avut minim un argument, primul elemnt din argv va fi mereu numele comenzii
     if(cmd.argc > 0) {
         cmd.name = cmd.argv[0];
     }
@@ -168,12 +220,14 @@ struct Command parse_command(char * const command) {
     return cmd;
 }
 
+// funcite pentru initializarea structurii Command
 void init_command(struct Command * command) {
     command->name = NULL;
     command->argc = 0;
     command->argv = malloc(MAX_COMMAND_ARGS * sizeof(char*));
 }
 
+// funcite pentru eliberarea resurselor folosite de structura Command
 void destroy_command(struct Command * command) {
     free(command->argv);
 }
@@ -185,48 +239,74 @@ int shell(struct ParsedConfig *pc) {
     char password[BUFFER_SIZE];
 
     printf("username: ");
+    // citim username-ul introdus de utilizator pana la endline (enter)
+    // si tratam cazurile de exceptie
     if (fgets(username, sizeof(username), stdin) == NULL) {
         if (fprintf(stderr, "Eroare la citire username\n") < 0) {
             perror("Eroare la apelul fprintf() ");
         }
         destroy_parsed_config(pc);
-        return -1;
+        return 1;
     }
+    // inlocuim caracterul endline de la finalul username-ului cu terminatorul null
     username[strcspn(username, "\n")] = '\0';
 
     printf("password: ");
+    // citim parola introdusa de utilizator pana la endline (enter)
+    // si tratam cazurile de exceptie
     if (fgets(password, sizeof(password), stdin) == NULL) {
         if (fprintf(stderr, "Eroare la citire parola\n") < 0) {
             perror("Eroare la apelul fprintf() ");
         }
         destroy_parsed_config(pc);
-        return -1;
+        return 1;
     }
+    // inlocuim caracterul endline de la finalul parolei cu terminatorul null
     password[strcspn(password, "\n")] = '\0';
 
+    // apelam funcita login cu datele introduse de utilizator, in cazul in care nu sunt corecte
+    // funcita foloseste exit(1) deci ce e dupa nu se va executa
     login(username, password, pc);
 
+    // variabila in care stocam linia introdusa de utlizator (pot fi mai multe comenzi legate cu ';')
     char line[BUFFER_SIZE];
+
+    // core loop pentru shell
     while (1) {
+        // afisam prompt-ul conform configuratiei
         printf("%s ", pc->prompt);
+
+        // citim inputul utilizatorului in variabila line
         if (fgets(line, sizeof(line), stdin) == NULL) {
             break;
         }
+
+        // inlocuim endline de la final cu \0
         line[strcspn(line, "\n")] = '\0';
+
+        // trimitem comanda funcitei adapted_system pentru a fi executata intr-un nou proces,
+        // in cazul in care statusul nu este 0 il salvam pentru a fi returnat la final
         if (adatped_system(line) != 0) {
-            status = -1;
+            status = 1;
         }
     }
     return status;
 }
 
 int main() {
+    // variabila care sa contina datele fisierului de configurare
     config_t cfg;
     config_init(&cfg);
+
+    // parsam fisierul de configurare
     struct ParsedConfig pc = parse_config(&cfg);
     int status = shell(&pc);
+
+    // eliberam resursele folosite
     destroy_parsed_config(&pc);
     config_destroy(&cfg);
+
+    // returnam statusul returnat de shell
     return status;
 }
 

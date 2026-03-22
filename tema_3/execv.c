@@ -13,27 +13,35 @@
 
 int main() {
     pid_t cpid;
+    // variabila in care salvam exit code-ul copilului
     int status = 0;
 
     cpid = fork();
 
+    // in cazul in care apelul de sistem fork a esuat, afisam eraorea si iesim cu exit code 1
     if (cpid == -1) {
         perror("Eroare la apelul fork()\n");
         exit(1);
     }
 
+    // daca suntem in copil
     if (cpid == 0) {
+        // creem lista de argumente
         static char* args[] = {"ls", "-l", "-a", NULL};
+        // executam ls cu lista de argumente creata folosind apelul de sistem execv si calea absoluta catre utilitara ls
         execv("/bin/ls", args);
+        // in cazul in care sistemul nu va putea executa execv, printam eroarea si dam abort
         perror("Eroare la apelul execv()");
         abort();
     } else {
+        // in parinte asteptam copilul, in cazul in care apelul de sistem wait are o eroare afisam eroarea si returnam exit code 1
         if (waitpid(cpid, &status, 0) == -1) {
             perror("Eroare la apelul wait()");
             exit(1);
         }
     }
 
+    // returnam exit statusul copilului in cazul in care a, ajuns pana aici
     return WEXITSTATUS(status);
 }
 
