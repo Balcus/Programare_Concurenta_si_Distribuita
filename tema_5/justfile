@@ -1,0 +1,17 @@
+clean:
+    rm -rf build
+
+build:
+    mkdir -p build
+    cd build && cmake ..
+    cd build && make
+
+cbuild:
+    just clean
+    just build
+
+run:
+    just cbuild
+    kitty -e ./build/server &
+    sleep 1
+    kitty -e ./build/client
