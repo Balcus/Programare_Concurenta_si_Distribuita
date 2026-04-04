@@ -12,33 +12,95 @@
 #include <strings.h> // bzero()
 #include <sys/socket.h>
 #include <unistd.h> // read(), write(), close()
+#include <fcntl.h>
 
 #define BUFFER_SIZE 256
 #define PORT 8001
+#define CREDENTIALS_FILE "/tmp/credentials.txt"
 
-void func(int sockfd) {
+int auth(char*, char*);
+void show_menu();
+void handle_comm(int);
+
+int auth(char *username, char *password) {
+    int fd = open(CREDENTIALS_FILE, O_RDONLY);
+    if (fd == -1) {
+        return 0;
+    }
+
     char buff[BUFFER_SIZE];
-    int n;
-    while (1) {
-        bzero(buff, sizeof(buff));
-        printf("Enter the string : ");
+    int n = read(fd, buff, sizeof(buff) - 1);
+    close(fd);
 
-        n = 0;
+    if (n <= 0) {
+        return 0;
+    }
 
-        while ((buff[n++] = getchar()) != '\n')
-            ;
+    buff[n] = '\0';
 
-        write(sockfd, buff, sizeof(buff));
-
-        bzero(buff, sizeof(buff));
-
-        read(sockfd, buff, sizeof(buff));
-        printf("From Server : %s", buff);
-
-        if ((strncmp(buff, "exit", 4)) == 0) {
-            printf("Client Exit...\n");
-            break;
+    char *line = strtok(buff, "\n");
+    while (line != NULL) {
+        char valid_username[BUFFER_SIZE], valid_password[BUFFER_SIZE];
+        if (sscanf(line, "%s %s", valid_username, valid_password) == 2) {
+            if (strcmp(username, valid_username) == 0 && strcmp(password, valid_password) == 0) {
+                return 1;
+            }
         }
+        line = strtok(NULL, "\n");
+    }
+    return 0;
+}
+
+void show_menu() {
+    printf("\n>>> 1. Send Message\n");
+    printf(">>> 2. Request Time\n");
+    printf(">>> 3. Request User\n");
+    printf(">>> 4. Execute Command\n");
+    printf(">>> 5. Close Connection\n");
+}
+
+void handle_comm(int s) {
+    char b[BUFFER_SIZE];
+    char sel[10];
+
+    while (1) {
+        show_menu();
+        printf("Select: ");
+        
+        fgets(sel, sizeof(sel), stdin);
+        int option = atoi(sel);
+
+        switch (option) {
+            case 1:
+                printf(">>> Send Message\n  Enter message: ");
+                fgets(b, BUFFER_SIZE, stdin);
+                write(s, b, strlen(b));
+                break;
+            case 2:
+                printf(">>> Request Time\n");
+                write(s, "time\n", 5);
+                break;
+            case 3:
+                printf(">>> Request User\n");
+                write(s, "user\n", 5);
+                break;
+            case 4:
+                printf(">>> Execute Command\n  Enter cmd: ");
+                fgets(b, BUFFER_SIZE, stdin);
+                write(s, b, strlen(b));
+                break;
+            case 5:
+                write(s, "exit\n", 5);
+                printf("Client Exit...\n");
+                return;
+            default:
+                printf("Optiune invalida.\n");
+                continue;
+        }
+
+        memset(b, 0, BUFFER_SIZE);
+        read(s, b, BUFFER_SIZE);
+        printf("::: %s", b);
     }
 }
 
@@ -64,7 +126,14 @@ int main() {
         exit(1);
     }
 
-    func(sockfd);
+    char username[BUFFER_SIZE], password[BUFFER_SIZE];
+    printf("Username: "); scanf("%s", username);
+    printf("Password: "); scanf("%s", password);
+    getchar();
+
+    if (auth(username, password) == 1) {
+        handle_comm(sockfd);
+    }
 
     close(sockfd);
 }

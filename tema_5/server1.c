@@ -14,9 +14,30 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
+#include <fcntl.h>
 
 #define BUFFER_SIZE 256
 #define PORT 8001
+#define PERMS 0644
+
+int create_logfile() {
+    time_t t = time(NULL);
+    struct tm* local_time = localtime(&t);
+    char log_filename[BUFFER_SIZE];
+
+    strftime(log_filename, sizeof(log_filename), "/tmp/%d-%m-%Y_%H-%M-%S_logs.txt", local_time);
+    int fd = open(log_filename, O_CREAT | O_WRONLY | O_TRUNC, PERMS);
+
+    if (fd == -1) {
+        perror("Eroare la crearea fisierului de logs.");
+        exit(1);
+    }
+
+    char* msg = "Log file creat cu succes.\n";
+    write(fd, msg, strlen(msg));
+
+    return fd;
+}
 
 void handle_comm(int connfd) {
     char buff[BUFFER_SIZE];
@@ -27,17 +48,22 @@ void handle_comm(int connfd) {
             printf("Clientul a inchis conexiunea.\n");
             break;
         }
+
         buff[strcspn(buff, "\n")] = 0;
 
         char response[BUFFER_SIZE];
+
         if (strcmp(buff, "time") == 0) {
             time_t t = time(NULL);
             snprintf(response, BUFFER_SIZE, "%s", ctime(&t));
+
         } else if (strcmp(buff, "user") == 0) {
             struct passwd *pw = getpwuid(getuid());
             snprintf(response, BUFFER_SIZE, "%s\n", pw->pw_name);
+
         } else {
             snprintf(response, BUFFER_SIZE, "echo :: %s\n", buff);
+
         }
 
         write(connfd, response, strlen(response));
@@ -81,7 +107,11 @@ int main() {
         exit(1);
     }
 
+    int log_file_fd = create_logfile();
+
     handle_comm(connfd);
 
+    close(log_file_fd);
+    close(connfd);
     close(sockfd);
 }
